@@ -1,27 +1,21 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import React, { useState, useEffect } from "react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d', '#a4de6c', '#d0ed57', '#ffc658']
 
 export default function FinancialPlanner() {
   const [rawData, setRawData] = useState("")
-  const [transactions, setTransactions] = useState<{ id: string; description: string; amount: number; category: string }[]>([])
-  const [categories, setCategories] = useState<{ name: string; total: number; percentage: number }[]>([])
+  const [transactions, setTransactions] = useState([])
+  const [categories, setCategories] = useState([])
   const [totalIncome, setTotalIncome] = useState(0)
   const [totalExpenses, setTotalExpenses] = useState(0)
   const [insight, setInsight] = useState("")
-  const [monthlyTrend, setMonthlyTrend] = useState<{ month: string; income: number; expenses: number }[]>([])
-  const [unknownTransactions, setUnknownTransactions] = useState<{ id: string; description: string; amount: number; category: string }[]>([])
+  const [monthlyTrend, setMonthlyTrend] = useState([])
+  const [unknownTransactions, setUnknownTransactions] = useState([])
 
-  const parseAmount = (amountStr: string): number => {
+  const parseAmount = (amountStr) => {
     const isIncome = amountStr.startsWith('+')
     const cleanedStr = amountStr.replace(/[^0-9.k]/g, '').toLowerCase()
     let amount = cleanedStr.endsWith('k') 
@@ -30,7 +24,7 @@ export default function FinancialPlanner() {
     return isIncome ? amount : -amount
   }
 
-  const categorizeTransaction = (description: string): string => {
+  const categorizeTransaction = (description) => {
     const lowerDesc = description.toLowerCase()
     if (lowerDesc.includes("dinner") || lowerDesc.includes("lunch") || lowerDesc.includes("breakfast")) return "Food"
     if (lowerDesc.includes("drinks") || lowerDesc.includes("bar")) return "Drinks"
@@ -45,8 +39,8 @@ export default function FinancialPlanner() {
 
   const processRawData = () => {
     const lines = rawData.split('\n')
-    const newTransactions: { id: string; description: string; amount: number; category: string }[] = []
-    const newUnknownTransactions: { id: string; description: string; amount: number; category: string }[] = []
+    const newTransactions = []
+    const newUnknownTransactions = []
 
     lines.forEach((line, index) => {
       const parts = line.trim().split(' ')
@@ -68,8 +62,8 @@ export default function FinancialPlanner() {
     analyzeData(newTransactions)
   }
 
-  const analyzeData = (data: { id: string; description: string; amount: number; category: string }[]) => {
-    const categoryTotals: { [key: string]: number } = {}
+  const analyzeData = (data) => {
+    const categoryTotals = {}
     let incomeTotal = 0
     let expensesTotal = 0
 
@@ -82,7 +76,7 @@ export default function FinancialPlanner() {
       }
     })
 
-    const newCategories: { name: string; total: number; percentage: number }[] = Object.entries(categoryTotals).map(([name, total]) => ({
+    const newCategories = Object.entries(categoryTotals).map(([name, total]) => ({
       name,
       total,
       percentage: expensesTotal > 0 ? (total / expensesTotal) * 100 : 0
@@ -92,7 +86,6 @@ export default function FinancialPlanner() {
     setTotalIncome(incomeTotal)
     setTotalExpenses(expensesTotal)
 
-    // Generate insight
     let insightText = ""
     if (newCategories.length > 0) {
       const highestCategory = newCategories.reduce((prev, current) => 
@@ -109,7 +102,6 @@ export default function FinancialPlanner() {
     
     setInsight(insightText)
 
-    // Generate mock monthly trend data
     const mockTrend = [
       { month: "Jan", income: incomeTotal * 0.9, expenses: expensesTotal * 0.8 },
       { month: "Feb", income: incomeTotal * 0.95, expenses: expensesTotal * 0.9 },
@@ -119,7 +111,7 @@ export default function FinancialPlanner() {
     setMonthlyTrend(mockTrend)
   }
 
-  const updateCategory = (transactionId: string, newCategory: string) => {
+  const updateCategory = (transactionId, newCategory) => {
     setTransactions(prevTransactions => 
       prevTransactions.map(t => 
         t.id === transactionId ? { ...t, category: newCategory } : t
@@ -135,205 +127,108 @@ export default function FinancialPlanner() {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6 text-center">Financial Planner</h1>
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Enter Raw Financial Data</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            placeholder="Paste your raw financial data here. Format: amount description (e.g., '10k dinner' or '+20k freelance')"
-            value={rawData}
-            onChange={(e) => setRawData(e.target.value)}
-            rows={10}
-            className="mb-4"
-          />
-          <Button onClick={processRawData}>Process Data</Button>
-        </CardContent>
-      </Card>
+      <div className="mb-6">
+        <h2>Enter Raw Financial Data</h2>
+        <textarea
+          placeholder="Paste your raw financial data here. Format: amount description (e.g., '10k dinner' or '+20k freelance')"
+          value={rawData}
+          onChange={(e) => setRawData(e.target.value)}
+          rows={10}
+          className="w-full p-2 border rounded"
+        />
+        <button onClick={processRawData} className="mt-2 p-2 bg-blue-500 text-white rounded">Process Data</button>
+      </div>
 
       {transactions.length > 0 && (
-        <Tabs defaultValue="summary" className="mt-6">
-          <TabsList>
-            <TabsTrigger value="summary">Summary</TabsTrigger>
-            <TabsTrigger value="transactions">Transactions</TabsTrigger>
-            <TabsTrigger value="categories">Categories</TabsTrigger>
-            <TabsTrigger value="charts">Charts</TabsTrigger>
-            <TabsTrigger value="insight">AI Insight</TabsTrigger>
-            <TabsTrigger value="trends">Trends</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="summary">
-            <Card>
-              <CardHeader>
-                <CardTitle>Financial Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Total Income: {totalIncome.toFixed(2)} THB</p>
-                <p>Total Expenses: {totalExpenses.toFixed(2)} THB</p>
-                <p>Net: {(totalIncome - totalExpenses).toFixed(2)} THB</p>
-                <p>Savings Rate: {totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100).toFixed(2) : 0}%</p>
-              </CardContent>
-            </Card>
+        <div>
+          <h2>Financial Summary</h2>
+          <p>Total Income: {totalIncome.toFixed(2)} THB</p>
+          <p>Total Expenses: {totalExpenses.toFixed(2)} THB</p>
+          <p>Net: {(totalIncome - totalExpenses).toFixed(2)} THB</p>
+          <p>Savings Rate: {totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100).toFixed(2) : 0}%</p>
 
-            {unknownTransactions.length > 0 && (
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Categorization Feedback</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="mb-4">Please help us categorize the following transactions:</p>
-                  {unknownTransactions.map((transaction) => (
-                    <div key={transaction.id} className="mb-4">
-                      <p className="font-semibold">{transaction.description} ({transaction.amount.toFixed(2)} THB)</p>
-                      <div className="flex space-x-4 mt-2">
-                        {['Recreation', 'Shopping', 'Food'].map((suggestedCategory, index) => (
-                          <div key={index} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`${transaction.id}-${suggestedCategory}`}
-                              onCheckedChange={() => updateCategory(transaction.id, suggestedCategory)}
-                            />
-                            <Label
-                              htmlFor={`${transaction.id}-${suggestedCategory}`}
-                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                              {suggestedCategory}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+          <h2>Transactions</h2>
+          <table className="w-full mt-4">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Amount (THB)</th>
+                <th>Category</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.map((t) => (
+                <tr key={t.id}>
+                  <td>{t.description}</td>
+                  <td>{t.amount.toFixed(2)}</td>
+                  <td>{t.category}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h2>Spending by Category</h2>
+          <table className="w-full mt-4">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Total (THB)</th>
+                <th>Percentage</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map((category) => (
+                <tr key={category.name}>
+                  <td>{category.name}</td>
+                  <td>{category.total.toFixed(2)}</td>
+                  <td>{category.percentage.toFixed(2)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h2>Expense Distribution</h2>
+          <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie
+                  data={categories}
+                  dataKey="total"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  fill="#8884d8"
+                  label
+                >
+                  {categories.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
 
-          <TabsContent value="transactions">
-            <Card>
-              <CardHeader>
-                <CardTitle>Transactions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Amount (THB)</TableHead>
-                      <TableHead>Category</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.map((t) => (
-                      <TableRow key={t.id}>
-                        <TableCell>{t.description}</TableCell>
-                        <TableCell>{t.amount.toFixed(2)}</TableCell>
-                        <TableCell>{t.category}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <h2>AI Insight</h2>
+          <p>{insight}</p>
 
-          <TabsContent value="categories">
-            <Card>
-              <CardHeader>
-                <CardTitle>Spending by Category</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {categories.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Total (THB)</TableHead>
-                        <TableHead>Percentage</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {categories.map((category) => (
-                        <TableRow key={category.name}>
-                          <TableCell>{category.name}</TableCell>
-                          <TableCell>{category.total.toFixed(2)}</TableCell>
-                          <TableCell>{category.percentage.toFixed(2)}%</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p>No expense categories to display.</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="charts">
-            <Card>
-              <CardHeader>
-                <CardTitle>Expense Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {categories.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={categories}
-                        dataKey="total"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        fill="#8884d8"
-                        label
-                      >
-                        {categories.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <p>No expense data to display in the chart.</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="insight">
-            <Card>
-              <CardHeader>
-                <CardTitle>AI Insight</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{insight}</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="trends">
-            <Card>
-              <CardHeader>
-                <CardTitle>Monthly Trends</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={monthlyTrend}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="income" fill="#8884d8" name="Income" />
-                    <Bar dataKey="expenses" fill="#82ca9d" name="Expenses" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          <h2>Monthly Trends</h2>
+          <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer>
+              <BarChart data={monthlyTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="income" fill="#8884d8" name="Income" />
+                <Bar dataKey="expenses" fill="#82ca9d" name="Expenses" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       )}
     </div>
   )
