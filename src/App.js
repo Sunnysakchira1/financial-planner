@@ -11,30 +11,15 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Ba
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 
-type Transaction = {
-  id: string
-  description: string
-  amount: number
-  category: string
-}
-
-type Category = {
-  name: string
-  total: number
-  percentage: number
-}
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d', '#a4de6c', '#d0ed57', '#ffc658']
-
 export default function FinancialPlanner() {
   const [rawData, setRawData] = useState("")
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
+  const [transactions, setTransactions] = useState<{ id: string; description: string; amount: number; category: string }[]>([])
+  const [categories, setCategories] = useState<{ name: string; total: number; percentage: number }[]>([])
   const [totalIncome, setTotalIncome] = useState(0)
   const [totalExpenses, setTotalExpenses] = useState(0)
   const [insight, setInsight] = useState("")
   const [monthlyTrend, setMonthlyTrend] = useState<{ month: string; income: number; expenses: number }[]>([])
-  const [unknownTransactions, setUnknownTransactions] = useState<Transaction[]>([])
+  const [unknownTransactions, setUnknownTransactions] = useState<{ id: string; description: string; amount: number; category: string }[]>([])
 
   const parseAmount = (amountStr: string): number => {
     const isIncome = amountStr.startsWith('+')
@@ -60,8 +45,8 @@ export default function FinancialPlanner() {
 
   const processRawData = () => {
     const lines = rawData.split('\n')
-    const newTransactions: Transaction[] = []
-    const newUnknownTransactions: Transaction[] = []
+    const newTransactions: { id: string; description: string; amount: number; category: string }[] = []
+    const newUnknownTransactions: { id: string; description: string; amount: number; category: string }[] = []
 
     lines.forEach((line, index) => {
       const parts = line.trim().split(' ')
@@ -83,7 +68,7 @@ export default function FinancialPlanner() {
     analyzeData(newTransactions)
   }
 
-  const analyzeData = (data: Transaction[]) => {
+  const analyzeData = (data: { id: string; description: string; amount: number; category: string }[]) => {
     const categoryTotals: { [key: string]: number } = {}
     let incomeTotal = 0
     let expensesTotal = 0
@@ -97,7 +82,7 @@ export default function FinancialPlanner() {
       }
     })
 
-    const newCategories: Category[] = Object.entries(categoryTotals).map(([name, total]) => ({
+    const newCategories: { name: string; total: number; percentage: number }[] = Object.entries(categoryTotals).map(([name, total]) => ({
       name,
       total,
       percentage: expensesTotal > 0 ? (total / expensesTotal) * 100 : 0
